@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crypto Wallet Scanner</title>
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --primary-green: #d4f57b;
+            --dark-btn: #3e3e3e;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #333;
+            --text-muted: #888;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* --- User Info Header --- */
+        .user-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: -5px;
+        }
+
+        .user-badge {
+            background: #e1e1e1;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        /* --- Cards --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        /* --- Header Section inside Card --- */
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+        
+        .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .badge-btn {
+            background-color: var(--primary-green);
+            border: none;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #333;
+        }
+
+        /* --- Coin Selector --- */
+        .coin-list {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            /* Hide scrollbar */
+            scrollbar-width: none; 
+        }
+        .coin-list::-webkit-scrollbar { display: none; }
+
+        .coin-item {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            min-width: 60px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .coin-item.active {
+            background-color: var(--primary-green);
+            border-color: #bad66a;
+        }
+
+        .coin-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            fill: #555;
+        }
+        
+        .coin-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #555;
+        }
+
+        /* --- Checked Addresses Section --- */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .counter-text {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* --- The Log (Terminal) --- */
+        .log-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+
+        .log-item {
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            gap: 8px;
+            animation: slideDown 0.2s ease-out;
+            white-space: nowrap;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .price-badge {
+            background-color: var(--dark-btn);
+            color: var(--primary-green);
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-family: monospace;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .wallet-text {
+            color: #555;
+            font-family: monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .border-left-line {
+            width: 2px;
+            height: 100%;
+            background: #ccc;
+            margin-right: 5px;
+        }
+
+        /* --- Found Wallets --- */
+        .archive-btn {
+            background: #e0eacc;
+            color: #7da056;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .empty-state {
+            border: 2px solid #f0f0f0;
+            border-radius: 15px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        /* --- Bottom Buttons --- */
+        .action-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-bottom: 20px;
+        }
+
+        .btn-main {
+            flex: 1;
+            padding: 15px;
+            border-radius: 25px;
+            border: none;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+
+        .btn-main:active {
+            transform: scale(0.98);
+        }
+
+        .btn-start {
+            background-color: var(--primary-green);
+            color: #333;
+        }
+
+        .btn-withdraw {
+            background-color: var(--dark-btn);
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Loader Overlay */
+        #loader {
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(255,255,255,0.9);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #555;
+        }
+        .hide { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loader">Loading Data...</div>
+
+<div class="container">
+
+    <!-- User Info (Optional) -->
+    <div class="user-header">
+        <span>Welcome, <span id="displayUsername">User</span></span>
+        <span class="user-badge">ID: <span id="displayUserId">...</span></span>
+    </div>
+
+    <!-- Card 1: Blockchains -->
+    <div class="card">
+        <div class="header-row">
+            <div>
+                <div class="title">Blockchains for Search</div>
+                <div class="subtitle">Select networks to scan</div>
+            </div>
+            <button class="badge-btn">Deselect All</button>
+        </div>
+
+        <div class="coin-list">
+            <div class="coin-item active" onclick="toggleCoin(this)">
+                <svg class="coin-icon" viewBox="0 0 32 32">
+                    <path d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm7.189-12.834c.32-2.14-1.311-3.293-3.537-4.062l.722-2.896-1.762-.44-.704 2.825c-.463-.116-.94-.223-1.408-.33l.707-2.83-1.761-.439-.725 2.906c-.378-.086-.75-.17-1.115-.26l-.002-.008-2.43.606.594 2.383s1.656-.414 1.637-.378c.914.228 1.08.835 1.053 1.316l-1.055 4.23c.063.016.145.039.234.074l-.24-.06-1.48 5.932c-.112.278-.395.696-1.034.538.02.037-1.638-.41-1.638-.41l-1.144 2.637 2.292.572c.427.107.844.22 1.254.32l-.728 2.923 1.76.44.721-2.893c.48.13 9.453 2.58 5.64-7.893zm-3.212 1.157c-1.714 6.872-8.354 3.158-10.708 2.57l1.908-7.647c2.355.588 9.944 1.738 8.8 5.077z" fill="#333" fill-opacity="0.6"/>
+                </svg>
+                <span class="coin-name">BTC</span>
+            </div>
+            
+            <div class="coin-item" onclick="toggleCoin(this)">
+                <svg class="coin-icon" viewBox="0 0 32 32">
+                    <path d="M15.925 23.96l-9.818-5.797L15.925 32l9.828-13.837-9.828 5.797zM16.075 0L6.255 16.32l9.82 5.8 9.815-5.8L16.075 0z" fill="#333" fill-opacity="0.6"/>
+                </svg>
+                <span class="coin-name">ETH</span>
+            </div>
+
+            <div class="coin-item" onclick="toggleCoin(this)">
+                <span class="coin-name" style="font-size: 20px;">❖</span>
+                <span class="coin-name">BNB</span>
+            </div>
+
+            <div class="coin-item" onclick="toggleCoin(this)">
+                <span class="coin-name" style="font-size: 20px;">▼</span>
+                <span class="coin-name">TRX</span>
+            </div>
+
+            <div class="coin-item" onclick="toggleCoin(this)">
+                <span class="coin-name" style="font-size: 20px;">S</span>
+                <span class="coin-name">SOL</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Checked Addresses -->
+    <div class="card">
+        <div class="section-header">
+            <div class="icon-circle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+            <div>
+                <div class="title">Checked Addresses</div>
+                <div class="counter-text"><span id="scanCount">0</span> scanned</div>
+            </div>
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <!-- Items injected via JS -->
+            <div class="log-item" style="color:#aaa; justify-content:center;">Ready to scan...</div>
+        </div>
+    </div>
+
+    <!-- Card 3: Found Wallets -->
+    <div class="card">
+        <div class="section-header">
+            <div class="icon-circle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <div>
+                <div class="title">Found wallets</div>
+                <div class="counter-text"><span id="foundCount">0</span> wallets discovered</div>
+            </div>
+            <button class="archive-btn">Archive</button>
+        </div>
+
+        <div class="empty-state">
+            NO FOUND WALLETS YET
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="action-area">
+        <button class="btn-main btn-start" id="startBtn">START SCANNING</button>
+        <button class="btn-main btn-withdraw" id="withdrawBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--primary-green)">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            WITHDRAW
+        </button>
+    </div>
+
+</div>
+
+<!-- MODULE SCRIPT FOR FIREBASE AND LOGIC -->
+<script type="module">
+    // 1. IMPORT FIREBASE FROM CDN
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+    import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // 2. FIREBASE CONFIGURATION
+    const firebaseConfig = {
+        apiKey: "AIzaSyCkQm1K-wtC9o7Im9kYy730wWYpnnCBMkI",
+        authDomain: "bruta-f08c6.firebaseapp.com",
+        databaseURL: "https://bruta-f08c6-default-rtdb.firebaseio.com",
+        projectId: "bruta-f08c6",
+        storageBucket: "bruta-f08c6.firebasestorage.app",
+        messagingSenderId: "1037120740694",
+        appId: "1:1037120740694:web:0584dd5ad620a1a5f10af7",
+        measurementId: "G-02YGSBRLNY"
+    };
+
+    // 3. INITIALIZE APP
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getDatabase(app);
+
+    // 4. TELEGRAM USER SETUP
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Open full height
+
+    // Use Telegram ID or fallback to random ID (for browser testing outside Telegram)
+    let tgUser = tg.initDataUnsafe?.user;
+    let userId = tgUser ? tgUser.id.toString() : "test_user_" + Math.floor(Math.random() * 10000);
+    let username = tgUser ? tgUser.first_name : "Test User";
+
+    // Update UI with User Info
+    document.getElementById('displayUsername').innerText = username;
+    document.getElementById('displayUserId').innerText = userId;
+
+    // 5. VARIABLES & DOM ELEMENTS
+    let isScanning = false;
+    let scanCount = 0;
+    let foundCount = 0;
+    let scanInterval;
+    let saveInterval; // To throttle database writes
+
+    const logContainer = document.getElementById('logContainer');
+    const scanCountEl = document.getElementById('scanCount');
+    const startBtn = document.getElementById('startBtn');
+    const withdrawBtn = document.getElementById('withdrawBtn');
+    const loader = document.getElementById('loader');
+
+    // Mnemonic words list
+    const words = [
+        "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
+        "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
+        "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit",
+        "adult", "advance", "advice", "aerobic", "affair", "afford", "afraid", "again", "age", "agent",
+        "agree", "ahead", "aim", "air", "airport", "aisle", "alarm", "album", "alcohol", "alert",
+        "alien", "all", "alley", "allow", "almost", "alone", "alpha", "already", "also", "alter",
+        "canvas", "canyon", "capable", "capital", "captain", "car", "carbon", "card", "cargo", "carpet"
+    ];
+
+    // 6. DATABASE LOGIC (Load & Save)
+    const userRef = ref(db, 'users/' + userId);
+
+    // Load initial data
+    get(userRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            scanCount = data.scanned || 0;
+            foundCount = data.found || 0;
+        } else {
+            // New User initialization
+            set(userRef, {
+                username: username,
+                scanned: 0,
+                found: 0,
+                joined: new Date().toISOString()
+            });
+        }
+        // Update UI
+        scanCountEl.innerText = scanCount.toLocaleString();
+        document.getElementById('foundCount').innerText = foundCount;
+        loader.classList.add('hide'); // Hide loading screen
+    }).catch((error) => {
+        console.error("DB Error", error);
+        loader.innerText = "Error loading data. Check internet.";
+    });
+
+    // Function to save progress to Firebase
+    function saveProgress() {
+        update(userRef, {
+            scanned: scanCount,
+            last_active: new Date().toISOString()
+        });
+    }
+
+    // 7. GAME LOGIC
+    
+    // Toggle Coin Visuals
+    window.toggleCoin = function(element) {
+        element.classList.toggle('active');
+    }
+
+    // Generate random phrase
+    function generateRandomMnemonic() {
+        let phrase = [];
+        for(let i=0; i<12; i++) {
+            phrase.push(words[Math.floor(Math.random() * words.length)]);
+        }
+        return phrase.join(' ');
+    }
+
+    // Add log entry (The Visuals)
+    function addLogEntry() {
+        const mnemonic = generateRandomMnemonic();
+        const shortMnemonic = mnemonic.substring(0, 40) + "...";
+        
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        // Simulate random visual findings (mostly 0.00)
+        div.innerHTML = `
+            <div class="price-badge">0.00$</div>
+            <div class="border-left-line"></div>
+            <div class="wallet-text">Wallet check: ${shortMnemonic}</div>
+        `;
+
+        logContainer.prepend(div);
+
+        // Keep list clean
+        if(logContainer.children.length > 7) {
+            logContainer.lastElementChild.remove();
+        }
+
+        // Increment logic
+        scanCount++;
+        scanCountEl.innerText = scanCount.toLocaleString();
+    }
+
+    // Start/Stop Logic
+    startBtn.addEventListener('click', () => {
+        if (!isScanning) {
+            // START
+            isScanning = true;
+            startBtn.innerText = "STOP SCANNING";
+            startBtn.style.backgroundColor = "#ff7b7b"; 
+            
+            // Visual loop (fast)
+            scanInterval = setInterval(addLogEntry, 80);
+
+            // Database Save loop (slower, every 3 seconds to save bandwidth)
+            saveInterval = setInterval(saveProgress, 3000);
+
+        } else {
+            // STOP
+            isScanning = false;
+            startBtn.innerText = "START SCANNING";
+            startBtn.style.backgroundColor = "";
+            
+            clearInterval(scanInterval);
+            clearInterval(saveInterval);
+            
+            // Save immediately on stop
+            saveProgress();
+        }
+    });
+
+    // Withdraw Button Logic (Just a visual trigger)
+    withdrawBtn.addEventListener('click', () => {
+        if(foundCount === 0) {
+            tg.showAlert("No funds found yet to withdraw! Keep scanning.");
+        } else {
+            tg.showAlert("Withdraw request sent.");
+        }
+    });
+
+</script>
+
+</body>
+</html>
