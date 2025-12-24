@@ -11,12 +11,12 @@
     <style>
         :root {
             --primary-green: #d4f57b;
+            --success-green: #4cd964;
             --dark-btn: #3e3e3e;
             --bg-color: #f0f2f5;
             --card-bg: #ffffff;
             --text-main: #333;
             --text-muted: #888;
-            --win-color: #ff9f43; /* Orange for found wallets */
         }
 
         * {
@@ -197,15 +197,13 @@
             border-radius: 6px;
             font-weight: bold;
             font-family: monospace;
-            min-width: 50px;
+            min-width: 60px;
             text-align: center;
         }
 
-        /* Visual style for a FOUND wallet */
-        .price-badge.found-item {
-            background-color: var(--win-color);
-            color: #fff;
-            box-shadow: 0 0 10px rgba(255, 159, 67, 0.5);
+        .price-badge.found {
+            background-color: var(--success-green);
+            color: white;
         }
 
         .wallet-text {
@@ -222,7 +220,7 @@
             margin-right: 5px;
         }
 
-        /* --- Found Wallets --- */
+        /* --- Found Wallets List --- */
         .archive-btn {
             background: #e0eacc;
             color: #7da056;
@@ -245,6 +243,58 @@
             font-size: 12px;
             font-weight: 600;
             margin-top: 5px;
+        }
+        
+        .found-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+
+        .found-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9fdf2;
+            border: 1px solid #d4f57b;
+            padding: 10px;
+            border-radius: 12px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .found-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .found-coin-lbl {
+            font-size: 12px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .found-addr-lbl {
+            font-size: 10px;
+            font-family: monospace;
+            color: #888;
+        }
+
+        .found-val {
+            text-align: right;
+        }
+        
+        .found-usd {
+            font-size: 13px;
+            font-weight: 800;
+            color: #4cd964;
+        }
+        
+        .found-crypto {
+            font-size: 10px;
+            color: #888;
         }
 
         /* --- Bottom Buttons --- */
@@ -312,7 +362,7 @@
     <!-- User Info -->
     <div class="user-header">
         <span>Welcome, <span id="displayUsername">User</span></span>
-        <span class="user-badge">ID: <span id="displayUserId">...</span></span>
+        <span class="user-badge">Balance: <span id="totalBalance">$0.00</span></span>
     </div>
 
     <!-- Card 1: Blockchains -->
@@ -393,10 +443,13 @@
             <button class="archive-btn">Archive</button>
         </div>
 
-        <!-- This message changes if wallets are found -->
-        <div class="empty-state" id="foundState">
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state">
             NO FOUND WALLETS YET
         </div>
+
+        <!-- Populated List -->
+        <div id="foundList" class="found-list"></div>
     </div>
 
     <!-- Buttons -->
@@ -413,14 +466,14 @@
 
 </div>
 
-<!-- MODULE SCRIPT FOR FIREBASE AND LOGIC -->
+<!-- MODULE SCRIPT -->
 <script type="module">
-    // 1. IMPORT FIREBASE FROM CDN
+    // 1. IMPORT FIREBASE
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
     import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 2. FIREBASE CONFIGURATION
+    // 2. CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyCkQm1K-wtC9o7Im9kYy730wWYpnnCBMkI",
         authDomain: "bruta-f08c6.firebaseapp.com",
@@ -432,54 +485,57 @@
         measurementId: "G-02YGSBRLNY"
     };
 
-    // 3. INITIALIZE APP
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const db = getDatabase(app);
 
-    // 4. TELEGRAM USER SETUP
+    // 3. TELEGRAM USER
     const tg = window.Telegram.WebApp;
     tg.expand();
 
     let tgUser = tg.initDataUnsafe?.user;
-    let userId = tgUser ? tgUser.id.toString() : "test_user_" + Math.floor(Math.random() * 10000);
+    let userId = tgUser ? tgUser.id.toString() : "test_user_v2_" + Math.floor(Math.random() * 10000);
     let username = tgUser ? tgUser.first_name : "Test User";
 
     document.getElementById('displayUsername').innerText = username;
-    document.getElementById('displayUserId').innerText = userId;
 
-    // 5. VARIABLES & DOM ELEMENTS
+    // 4. GAME STATE & DOM
     let isScanning = false;
     let scanCount = 0;
     let foundCount = 0;
+    let totalBalance = 0; // In USD
+    let historyLog = []; // Stores found wallet objects
     let scanInterval;
     let saveInterval;
-
-    // GAME SETTINGS
-    const MAX_WINS = 5;
-    const SCAN_LIMIT_FOR_WINS = 30000;
-    const MIN_WIN_AMOUNT = 50;
-    const MAX_WIN_AMOUNT = 200;
 
     const logContainer = document.getElementById('logContainer');
     const scanCountEl = document.getElementById('scanCount');
     const foundCountEl = document.getElementById('foundCount');
-    const foundStateEl = document.getElementById('foundState');
+    const totalBalanceEl = document.getElementById('totalBalance');
     const startBtn = document.getElementById('startBtn');
     const withdrawBtn = document.getElementById('withdrawBtn');
     const loader = document.getElementById('loader');
+    const emptyState = document.getElementById('emptyState');
+    const foundList = document.getElementById('foundList');
+
+    // Approximate rates for conversion visuals
+    const RATES = {
+        'BTC': 95000,
+        'ETH': 2800,
+        'BNB': 600,
+        'SOL': 145,
+        'TRX': 0.20
+    };
+
+    const COINS = ['BTC', 'ETH', 'BNB', 'SOL', 'TRX'];
 
     const words = [
         "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
         "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
         "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit",
-        "adult", "advance", "advice", "aerobic", "affair", "afford", "afraid", "again", "age", "agent",
-        "agree", "ahead", "aim", "air", "airport", "aisle", "alarm", "album", "alcohol", "alert",
-        "alien", "all", "alley", "allow", "almost", "alone", "alpha", "already", "also", "alter",
-        "canvas", "canyon", "capable", "capital", "captain", "car", "carbon", "card", "cargo", "carpet"
+        "adult", "advance", "advice", "aerobic", "affair", "afford", "afraid", "again", "age", "agent"
     ];
 
-    // 6. DATABASE LOGIC
+    // 5. DATABASE LOAD
     const userRef = ref(db, 'users/' + userId);
 
     get(userRef).then((snapshot) => {
@@ -487,25 +543,34 @@
             const data = snapshot.val();
             scanCount = data.scanned || 0;
             foundCount = data.found || 0;
+            totalBalance = data.balance || 0;
+            if(data.history) {
+                historyLog = JSON.parse(data.history);
+                historyLog.forEach(item => renderFoundItem(item));
+            }
         } else {
             set(userRef, {
                 username: username,
                 scanned: 0,
                 found: 0,
+                balance: 0,
+                history: "[]",
                 joined: new Date().toISOString()
             });
         }
         updateUI();
         loader.classList.add('hide');
     }).catch((error) => {
-        console.error("DB Error", error);
-        loader.innerText = "Error loading data.";
+        console.error(error);
+        loader.innerText = "Connection Error";
     });
 
     function saveProgress() {
         update(userRef, {
             scanned: scanCount,
             found: foundCount,
+            balance: totalBalance,
+            history: JSON.stringify(historyLog),
             last_active: new Date().toISOString()
         });
     }
@@ -513,14 +578,14 @@
     function updateUI() {
         scanCountEl.innerText = scanCount.toLocaleString();
         foundCountEl.innerText = foundCount;
+        totalBalanceEl.innerText = "$" + totalBalance.toFixed(2);
+        
         if(foundCount > 0) {
-            foundStateEl.innerText = "FUNDS DETECTED IN ARCHIVE";
-            foundStateEl.style.color = "#7da056";
-            foundStateEl.style.fontWeight = "800";
+            emptyState.style.display = 'none';
         }
     }
 
-    // 7. GAME LOGIC
+    // 6. LOGIC
     window.toggleCoin = function(element) {
         element.classList.toggle('active');
     }
@@ -533,70 +598,108 @@
         return phrase.join(' ');
     }
 
+    // Render a "Found" item in the Found Wallets list
+    function renderFoundItem(data) {
+        // Data format: { coin: 'BTC', amountUSD: 120.50, amountCrypto: 0.0012, phrase: '...' }
+        const div = document.createElement('div');
+        div.className = 'found-item';
+        div.innerHTML = `
+            <div class="found-info">
+                <div class="found-coin-lbl">${data.coin} Address</div>
+                <div class="found-addr-lbl">${data.phrase.substring(0, 20)}...</div>
+            </div>
+            <div class="found-val">
+                <div class="found-usd">+$${data.amountUSD}</div>
+                <div class="found-crypto">${data.amountCrypto} ${data.coin}</div>
+            </div>
+        `;
+        foundList.prepend(div);
+        emptyState.style.display = 'none';
+    }
+
     function addLogEntry() {
         const mnemonic = generateRandomMnemonic();
         const shortMnemonic = mnemonic.substring(0, 40) + "...";
         
-        let amount = "0.00";
-        let isFound = false;
-        let badgeClass = "price-badge";
-
-        // --- WINNING LOGIC ---
-        // Only trigger if we haven't found 5 yet AND we are under 30k scans
-        if (foundCount < MAX_WINS && scanCount < SCAN_LIMIT_FOR_WINS) {
-            // Chance calculation to ensure roughly 5 wins within 30k scans.
-            // ~1 win every 6000 scans on average, but random.
-            // We use a slightly higher probability (0.0003) to ensure they likely get all 5.
-            if (Math.random() < 0.00035) { 
-                isFound = true;
-                // Random amount between 50 and 200
-                const val = Math.random() * (MAX_WIN_AMOUNT - MIN_WIN_AMOUNT) + MIN_WIN_AMOUNT;
-                amount = val.toFixed(2);
-                badgeClass = "price-badge found-item"; // Add glowing orange style
-            }
+        // --- HIT LOGIC ---
+        // We want ~5 hits in 30,000 scans. 
+        // 30,000 / 5 = 1 hit every 6,000 scans roughly.
+        // Probability = 1/6000 = 0.00016
+        // To be safe and ensure they get them, we use 0.0002 (1 in 5000)
+        // Only if foundCount < 5 (as requested limit)
+        
+        let isHit = false;
+        let amountUSD = 0;
+        
+        if (foundCount < 5 && Math.random() < 0.0005) {
+            isHit = true;
+            // Generate Random Amount $50 - $200
+            amountUSD = (Math.random() * (200 - 50) + 50).toFixed(2);
         }
 
         const div = document.createElement('div');
         div.className = 'log-item';
-        div.innerHTML = `
-            <div class="${badgeClass}">${amount}$</div>
-            <div class="border-left-line"></div>
-            <div class="wallet-text">Wallet check: ${shortMnemonic}</div>
-        `;
+
+        if (isHit) {
+            // --- SUCCESS ---
+            const coin = COINS[Math.floor(Math.random() * COINS.length)];
+            const rate = RATES[coin];
+            const amountCrypto = (amountUSD / rate).toFixed(5);
+            
+            // Log Visual
+            div.innerHTML = `
+                <div class="price-badge found">$${amountUSD}</div>
+                <div class="border-left-line" style="background:#4cd964;"></div>
+                <div class="wallet-text" style="color:#333; font-weight:bold;">FOUND: ${coin} Wallet!</div>
+            `;
+
+            // Update State
+            foundCount++;
+            totalBalance += parseFloat(amountUSD);
+            
+            const hitData = {
+                coin: coin,
+                amountUSD: amountUSD,
+                amountCrypto: amountCrypto,
+                phrase: mnemonic
+            };
+            
+            historyLog.push(hitData);
+            renderFoundItem(hitData);
+            
+            // Force save immediately on hit
+            saveProgress();
+
+        } else {
+            // --- FAIL (Standard) ---
+            div.innerHTML = `
+                <div class="price-badge">0.00$</div>
+                <div class="border-left-line"></div>
+                <div class="wallet-text">Checking: ${shortMnemonic}</div>
+            `;
+        }
 
         logContainer.prepend(div);
-
         if(logContainer.children.length > 7) {
             logContainer.lastElementChild.remove();
         }
 
         scanCount++;
-        
-        if(isFound) {
-            foundCount++;
-            saveProgress(); // Save immediately when money is found
-        }
-
         updateUI();
     }
 
-    // Start/Stop Logic
+    // Start/Stop
     startBtn.addEventListener('click', () => {
         if (!isScanning) {
-            // START
             isScanning = true;
             startBtn.innerText = "STOP SCANNING";
             startBtn.style.backgroundColor = "#ff7b7b"; 
-            
-            scanInterval = setInterval(addLogEntry, 80); // Fast scanning
-            saveInterval = setInterval(saveProgress, 3000); // Save to DB every 3s
-
+            scanInterval = setInterval(addLogEntry, 60); // Speed up slightly
+            saveInterval = setInterval(saveProgress, 3000);
         } else {
-            // STOP
             isScanning = false;
             startBtn.innerText = "START SCANNING";
             startBtn.style.backgroundColor = "";
-            
             clearInterval(scanInterval);
             clearInterval(saveInterval);
             saveProgress();
@@ -605,9 +708,9 @@
 
     withdrawBtn.addEventListener('click', () => {
         if(foundCount === 0) {
-            tg.showAlert("No funds found yet to withdraw! Keep scanning.");
+            tg.showAlert("No funds found yet!");
         } else {
-            tg.showAlert("Withdrawal request created for " + foundCount + " wallets.");
+            tg.showAlert(`Balance: $${totalBalance.toFixed(2)}. \n\nWithdrawal requests are processed manually.`);
         }
     });
 
