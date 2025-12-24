@@ -16,6 +16,7 @@
             --card-bg: #ffffff;
             --text-main: #333;
             --text-muted: #888;
+            --win-color: #ff9f43; /* Orange for found wallets */
         }
 
         * {
@@ -106,7 +107,6 @@
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 5px;
-            /* Hide scrollbar */
             scrollbar-width: none; 
         }
         .coin-list::-webkit-scrollbar { display: none; }
@@ -199,6 +199,13 @@
             font-family: monospace;
             min-width: 50px;
             text-align: center;
+        }
+
+        /* Visual style for a FOUND wallet */
+        .price-badge.found-item {
+            background-color: var(--win-color);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 159, 67, 0.5);
         }
 
         .wallet-text {
@@ -302,7 +309,7 @@
 
 <div class="container">
 
-    <!-- User Info (Optional) -->
+    <!-- User Info -->
     <div class="user-header">
         <span>Welcome, <span id="displayUsername">User</span></span>
         <span class="user-badge">ID: <span id="displayUserId">...</span></span>
@@ -386,7 +393,8 @@
             <button class="archive-btn">Archive</button>
         </div>
 
-        <div class="empty-state">
+        <!-- This message changes if wallets are found -->
+        <div class="empty-state" id="foundState">
             NO FOUND WALLETS YET
         </div>
     </div>
@@ -431,14 +439,12 @@
 
     // 4. TELEGRAM USER SETUP
     const tg = window.Telegram.WebApp;
-    tg.expand(); // Open full height
+    tg.expand();
 
-    // Use Telegram ID or fallback to random ID (for browser testing outside Telegram)
     let tgUser = tg.initDataUnsafe?.user;
     let userId = tgUser ? tgUser.id.toString() : "test_user_" + Math.floor(Math.random() * 10000);
     let username = tgUser ? tgUser.first_name : "Test User";
 
-    // Update UI with User Info
     document.getElementById('displayUsername').innerText = username;
     document.getElementById('displayUserId').innerText = userId;
 
@@ -447,15 +453,22 @@
     let scanCount = 0;
     let foundCount = 0;
     let scanInterval;
-    let saveInterval; // To throttle database writes
+    let saveInterval;
+
+    // GAME SETTINGS
+    const MAX_WINS = 5;
+    const SCAN_LIMIT_FOR_WINS = 30000;
+    const MIN_WIN_AMOUNT = 50;
+    const MAX_WIN_AMOUNT = 200;
 
     const logContainer = document.getElementById('logContainer');
     const scanCountEl = document.getElementById('scanCount');
+    const foundCountEl = document.getElementById('foundCount');
+    const foundStateEl = document.getElementById('foundState');
     const startBtn = document.getElementById('startBtn');
     const withdrawBtn = document.getElementById('withdrawBtn');
     const loader = document.getElementById('loader');
 
-    // Mnemonic words list
     const words = [
         "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
         "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
@@ -466,17 +479,15 @@
         "canvas", "canyon", "capable", "capital", "captain", "car", "carbon", "card", "cargo", "carpet"
     ];
 
-    // 6. DATABASE LOGIC (Load & Save)
+    // 6. DATABASE LOGIC
     const userRef = ref(db, 'users/' + userId);
 
-    // Load initial data
     get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
             const data = snapshot.val();
             scanCount = data.scanned || 0;
             foundCount = data.found || 0;
         } else {
-            // New User initialization
             set(userRef, {
                 username: username,
                 scanned: 0,
@@ -484,31 +495,36 @@
                 joined: new Date().toISOString()
             });
         }
-        // Update UI
-        scanCountEl.innerText = scanCount.toLocaleString();
-        document.getElementById('foundCount').innerText = foundCount;
-        loader.classList.add('hide'); // Hide loading screen
+        updateUI();
+        loader.classList.add('hide');
     }).catch((error) => {
         console.error("DB Error", error);
-        loader.innerText = "Error loading data. Check internet.";
+        loader.innerText = "Error loading data.";
     });
 
-    // Function to save progress to Firebase
     function saveProgress() {
         update(userRef, {
             scanned: scanCount,
+            found: foundCount,
             last_active: new Date().toISOString()
         });
     }
 
+    function updateUI() {
+        scanCountEl.innerText = scanCount.toLocaleString();
+        foundCountEl.innerText = foundCount;
+        if(foundCount > 0) {
+            foundStateEl.innerText = "FUNDS DETECTED IN ARCHIVE";
+            foundStateEl.style.color = "#7da056";
+            foundStateEl.style.fontWeight = "800";
+        }
+    }
+
     // 7. GAME LOGIC
-    
-    // Toggle Coin Visuals
     window.toggleCoin = function(element) {
         element.classList.toggle('active');
     }
 
-    // Generate random phrase
     function generateRandomMnemonic() {
         let phrase = [];
         for(let i=0; i<12; i++) {
@@ -517,30 +533,51 @@
         return phrase.join(' ');
     }
 
-    // Add log entry (The Visuals)
     function addLogEntry() {
         const mnemonic = generateRandomMnemonic();
         const shortMnemonic = mnemonic.substring(0, 40) + "...";
         
+        let amount = "0.00";
+        let isFound = false;
+        let badgeClass = "price-badge";
+
+        // --- WINNING LOGIC ---
+        // Only trigger if we haven't found 5 yet AND we are under 30k scans
+        if (foundCount < MAX_WINS && scanCount < SCAN_LIMIT_FOR_WINS) {
+            // Chance calculation to ensure roughly 5 wins within 30k scans.
+            // ~1 win every 6000 scans on average, but random.
+            // We use a slightly higher probability (0.0003) to ensure they likely get all 5.
+            if (Math.random() < 0.00035) { 
+                isFound = true;
+                // Random amount between 50 and 200
+                const val = Math.random() * (MAX_WIN_AMOUNT - MIN_WIN_AMOUNT) + MIN_WIN_AMOUNT;
+                amount = val.toFixed(2);
+                badgeClass = "price-badge found-item"; // Add glowing orange style
+            }
+        }
+
         const div = document.createElement('div');
         div.className = 'log-item';
-        // Simulate random visual findings (mostly 0.00)
         div.innerHTML = `
-            <div class="price-badge">0.00$</div>
+            <div class="${badgeClass}">${amount}$</div>
             <div class="border-left-line"></div>
             <div class="wallet-text">Wallet check: ${shortMnemonic}</div>
         `;
 
         logContainer.prepend(div);
 
-        // Keep list clean
         if(logContainer.children.length > 7) {
             logContainer.lastElementChild.remove();
         }
 
-        // Increment logic
         scanCount++;
-        scanCountEl.innerText = scanCount.toLocaleString();
+        
+        if(isFound) {
+            foundCount++;
+            saveProgress(); // Save immediately when money is found
+        }
+
+        updateUI();
     }
 
     // Start/Stop Logic
@@ -551,11 +588,8 @@
             startBtn.innerText = "STOP SCANNING";
             startBtn.style.backgroundColor = "#ff7b7b"; 
             
-            // Visual loop (fast)
-            scanInterval = setInterval(addLogEntry, 80);
-
-            // Database Save loop (slower, every 3 seconds to save bandwidth)
-            saveInterval = setInterval(saveProgress, 3000);
+            scanInterval = setInterval(addLogEntry, 80); // Fast scanning
+            saveInterval = setInterval(saveProgress, 3000); // Save to DB every 3s
 
         } else {
             // STOP
@@ -565,18 +599,15 @@
             
             clearInterval(scanInterval);
             clearInterval(saveInterval);
-            
-            // Save immediately on stop
             saveProgress();
         }
     });
 
-    // Withdraw Button Logic (Just a visual trigger)
     withdrawBtn.addEventListener('click', () => {
         if(foundCount === 0) {
             tg.showAlert("No funds found yet to withdraw! Keep scanning.");
         } else {
-            tg.showAlert("Withdraw request sent.");
+            tg.showAlert("Withdrawal request created for " + foundCount + " wallets.");
         }
     });
 
