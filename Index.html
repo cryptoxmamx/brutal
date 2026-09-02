@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LiteHunt Ranger — Terminal Demo</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    background: #050505;
+    color: #d7d7d7;
+    font-family: "Courier New", Consolas, monospace;
+    font-size: 13px;
+}
+
+/* =========================
+   APP
+========================= */
+
+.app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(255,255,255,.035),
+            transparent 45%
+        ),
+        #050505;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.header {
+    height: 52px;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 18px;
+
+    background: #090909;
+    border-bottom: 1px solid #242424;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    width: 30px;
+    height: 30px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid #3a3a3a;
+    background: #111;
+    color: #eee;
+
+    font-weight: bold;
+}
+
+.title {
+    color: #eee;
+    font-weight: bold;
+    letter-spacing: .4px;
+}
+
+.version {
+    color: #666;
+    font-size: 11px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.live {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    color: #65e39a;
+    font-size: 11px;
+}
+
+.live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+
+    background: #65e39a;
+    box-shadow: 0 0 9px #65e39a;
+}
+
+/* =========================
+   MAIN TERMINAL
+========================= */
+
+.main {
+    min-height: 0;
+    flex: 1;
+
+    display: grid;
+    grid-template-columns: 270px 1fr 300px;
+
+    gap: 1px;
+
+    background: #252525;
+}
+
+/* =========================
+   PANELS
+========================= */
+
+.panel {
+    min-width: 0;
+    min-height: 0;
+
+    background: #080808;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    height: 38px;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 12px;
+
+    background: #0c0c0c;
+    border-bottom: 1px solid #202020;
+
+    color: #9d9d9d;
+    font-size: 11px;
+    letter-spacing: .6px;
+}
+
+.panel-header span:last-child {
+    color: #555;
+}
+
+/* =========================
+   LEFT CONFIG PANEL
+========================= */
+
+.config {
+    padding: 13px;
+    overflow-y: auto;
+}
+
+.section {
+    margin-bottom: 18px;
+}
+
+.section-title {
+    color: #777;
+    font-size: 10px;
+    margin-bottom: 9px;
+    text-transform: uppercase;
+}
+
+.input-row {
+    margin-bottom: 9px;
+}
+
+.input-label {
+    color: #666;
+    font-size: 10px;
+    margin-bottom: 5px;
+}
+
+.fake-input {
+    min-height: 31px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 9px;
+
+    background: #0d0d0d;
+    border: 1px solid #292929;
+
+    color: #cfcfcf;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.fake-input.active {
+    border-color: #555;
+    color: #eee;
+}
+
+.mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+
+    border: 1px solid #282828;
+}
+
+.mode button {
+    border: 0;
+    border-right: 1px solid #282828;
+
+    background: #0b0b0b;
+    color: #666;
+
+    padding: 8px 3px;
+
+    font-family: inherit;
+    font-size: 9px;
+
+    cursor: pointer;
+}
+
+.mode button:last-child {
+    border-right: 0;
+}
+
+.mode button.active {
+    background: #171717;
+    color: #eee;
+}
+
+.start-button {
+    width: 100%;
+
+    padding: 10px;
+
+    background: #d8d8d8;
+    color: #050505;
+
+    border: 0;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+.start-button:hover {
+    background: #fff;
+}
+
+.start-button.running {
+    background: #222;
+    color: #bbb;
+    border: 1px solid #333;
+}
+
+.small-note {
+    margin-top: 10px;
+
+    color: #444;
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+/* =========================
+   CENTER
+========================= */
+
+.center {
+    position: relative;
+    overflow: hidden;
+}
+
+.center-top {
+    padding: 13px;
+
+    border-bottom: 1px solid #202020;
+}
+
+.scan-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 10px;
+}
+
+.scan-title strong {
+    color: #ddd;
+    font-size: 12px;
+}
+
+.scan-state {
+    color: #65e39a;
+    font-size: 10px;
+}
+
+.progress {
+    height: 5px;
+    width: 100%;
+
+    background: #171717;
+
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+
+    background: #cfcfcf;
+
+    transition: width .15s linear;
+}
+
+.scan-meta {
+    margin-top: 8px;
+
+    display: flex;
+    justify-content: space-between;
+
+    color: #555;
+    font-size: 9px;
+}
+
+/* =========================
+   SCROLLING ID STREAM
+========================= */
+
+.stream {
+    min-height: 0;
+    flex: 1;
+
+    overflow-y: auto;
+
+    padding: 8px 0;
+
+    font-size: 11px;
+
+    scrollbar-width: thin;
+    scrollbar-color: #292929 transparent;
+}
+
+.stream::-webkit-scrollbar {
+    width: 5px;
+}
+
+.stream::-webkit-scrollbar-thumb {
+    background: #292929;
+}
+
+.stream-line {
+    display: grid;
+    grid-template-columns: 55px 75px 1fr 65px;
+
+    gap: 8px;
+
+    padding: 5px 13px;
+
+    border-bottom: 1px solid rgba(255,255,255,.018);
+
+    white-space: nowrap;
+}
+
+.stream-line:hover {
+    background: #0d0d0d;
+}
+
+.stream-time {
+    color: #454545;
+}
+
+.stream-index {
+    color: #686868;
+}
+
+.stream-id {
+    color: #aaa;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stream-result {
+    text-align: right;
+    color: #555;
+}
+
+.stream-result.ok {
+    color: #65e39a;
+}
+
+.stream-result.check {
+    color: #777;
+}
+
+/* =========================
+   RIGHT STATS
+========================= */
+
+.stats {
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.stat-card {
+    margin-bottom: 10px;
+
+    padding: 11px;
+
+    background: #0b0b0b;
+    border: 1px solid #202020;
+}
+
+.stat-name {
+    color: #555;
+    font-size: 9px;
+    margin-bottom: 7px;
+}
+
+.stat-value {
+    color: #ddd;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.stat-value.green {
+    color: #65e39a;
+}
+
+.stat-value.yellow {
+    color: #d8c16b;
+}
+
+.stat-value.blue {
+    color: #8db9e8;
+}
+
+.divider {
+    height: 1px;
+    background: #202020;
+    margin: 15px 0;
+}
+
+.worker {
+    display: flex;
+    justify-content: space-between;
+
+    padding: 6px 0;
+
+    border-bottom: 1px solid #161616;
+
+    font-size: 10px;
+}
+
+.worker-name {
+    color: #777;
+}
+
+.worker-status {
+    color: #65e39a;
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+.footer {
+    height: 27px;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 13px;
+
+    background: #090909;
+    border-top: 1px solid #222;
+
+    color: #4c4c4c;
+    font-size: 9px;
+}
+
+.footer span:last-child {
+    color: #666;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width: 850px) {
+
+    html,
+    body {
+        overflow: auto;
+    }
+
+    .app {
+        min-height: 100vh;
+        height: auto;
+    }
+
+    .header {
+        height: 48px;
+    }
+
+    .version {
+        display: none;
+    }
+
+    .main {
+        min-height: calc(100vh - 75px);
+
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel {
+        min-height: 0;
+    }
+
+    .panel.left {
+        order: 1;
+    }
+
+    .panel.center {
+        order: 2;
+        height: 440px;
+    }
+
+    .panel.right {
+        order: 3;
+    }
+
+    .config {
+        max-height: 340px;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .stat-card {
+        margin: 0;
+    }
+
+    .divider,
+    .worker {
+        display: none;
+    }
+
+    .stream-line {
+        grid-template-columns: 48px 58px 1fr 55px;
+        padding: 5px 9px;
+        font-size: 9px;
+    }
+
+    .footer {
+        display: none;
+    }
+}
+
+@media(max-width: 450px) {
+
+    .header {
+        padding: 0 10px;
+    }
+
+    .title {
+        font-size: 11px;
+    }
+
+    .live {
+        font-size: 9px;
+    }
+
+    .panel.center {
+        height: 390px;
+    }
+
+    .stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stat-value {
+        font-size: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- HEADER -->
+    <header class="header">
+
+        <div class="brand">
+
+            <div class="logo">L</div>
+
+            <div>
+                <div class="title">
+                    LiteHunt Ranger
+                </div>
+
+                <div class="version">
+                    terminal scanner interface
+                </div>
+            </div>
+
+        </div>
+
+        <div class="header-right">
+
+            <div class="live">
+                <span class="live-dot"></span>
+                <span id="headerStatus">READY</span>
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- LEFT -->
+        <section class="panel left">
+
+            <div class="panel-header">
+                <span>CONFIGURATION</span>
+                <span>01</span>
+            </div>
+
+            <div class="config">
+
+                <div class="section">
+
+                    <div class="section-title">
+                        Scan Range
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-label">
+                            START
+                        </div>
+
+                        <div class="fake-input">
+                            0000000000000000
+                        </div>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="input-label">
+                            END
+                        </div>
+
+                        <div class="fake-input">
+                            FFFFFFFFFFFFFFFF
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="section">
+
+                    <div class="section-title">
+                        Scanner Mode
+                    </div>
+
+                    <div class="mode">
+
+                        <button class="active">
+                            OFFLINE
+                        </button>
+
+                        <button>
+                            ONLINE
+                        </button>
+
+                        <button>
+                            THREAD
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="section">
+
+                    <div class="section-title">
+                        Parameters
+                    </div>
+
+                    <div class="input-row">
+
+                        <div class="input-label">
+                            BATCH SIZE
+                        </div>
+
+                        <div class="fake-input active">
+                            1,000
+                        </div>
+
+                    </div>
+
+                    <div class="input-row">
+
+                        <div class="input-label">
+                            WORKERS
+                        </div>
+
+                        <div class="fake-input active">
+                            08
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="section">
+
+                    <button
+                        class="start-button"
+                        id="startButton"
+                    >
+                        START SCANNER
+                    </button>
+
+                    <div class="small-note">
+                        Demonstration interface only.
+                        The browser does not generate,
+                        search or validate cryptocurrency
+                        private keys.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CENTER -->
+        <section class="panel center">
+
+            <div class="panel-header">
+                <span>LIVE SCANNER</span>
+                <span id="clock">00:00:00</span>
+            </div>
+
+
+            <div class="center-top">
+
+                <div class="scan-title">
+
+                    <strong>
+                        RANGE PROCESSOR
+                    </strong>
+
+                    <span
+                        class="scan-state"
+                        id="scanState"
+                    >
+                        IDLE
+                    </span>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        class="progress-bar"
+                        id="progressBar"
+                    ></div>
+
+                </div>
+
+                <div class="scan-meta">
+
+                    <span>
+                        POSITION:
+                        <span id="position">0</span>
+                    </span>
+
+                    <span>
+                        <span id="percentage">0.00</span>%
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="stream"
+                id="stream"
+            ></div>
+
+        </section>
+
+
+        <!-- RIGHT -->
+        <section class="panel right">
+
+            <div class="panel-header">
+                <span>STATISTICS</span>
+                <span>03</span>
+            </div>
+
+            <div class="stats">
+
+                <div class="stat-card">
+
+                    <div class="stat-name">
+                        PROCESSED
+                    </div>
+
+                    <div
+                        class="stat-value"
+                        id="processed"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-name">
+                        CURRENT RATE
+                    </div>
+
+                    <div
+                        class="stat-value blue"
+                        id="rate"
+                    >
+                        0 /s
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-name">
+                        DEMO EVENTS
+                    </div>
+
+                    <div
+                        class="stat-value green"
+                        id="events"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-name">
+                        RANGE PROGRESS
+                    </div>
+
+                    <div
+                        class="stat-value yellow"
+                        id="rightProgress"
+                    >
+                        0.00%
+                    </div>
+
+                </div>
+
+
+                <div class="divider"></div>
+
+
+                <div class="section-title">
+                    WORKERS
+                </div>
+
+
+                <div id="workers">
+
+                    <div class="worker">
+                        <span class="worker-name">worker-01</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                    <div class="worker">
+                        <span class="worker-name">worker-02</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                    <div class="worker">
+                        <span class="worker-name">worker-03</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                    <div class="worker">
+                        <span class="worker-name">worker-04</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                    <div class="worker">
+                        <span class="worker-name">worker-05</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                    <div class="worker">
+                        <span class="worker-name">worker-06</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                    <div class="worker">
+                        <span class="worker-name">worker-07</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                    <div class="worker">
+                        <span class="worker-name">worker-08</span>
+                        <span class="worker-status">READY</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- FOOTER -->
+    <footer class="footer">
+
+        <span>
+            LITEHUNT RANGER // TERMINAL DEMO
+        </span>
+
+        <span>
+            SYSTEM READY
+        </span>
+
+    </footer>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   DEMO SCANNER
+   ========================================================= */
+
+let running = false;
+
+let processed = 0;
+let demoEvents = 0;
+
+let startedAt = 0;
+let timer = null;
+
+const TOTAL = 1000000;
+
+
+/* Elements */
+
+const startButton =
+    document.getElementById("startButton");
+
+const stream =
+    document.getElementById("stream");
+
+const processedEl =
+    document.getElementById("processed");
+
+const rateEl =
+    document.getElementById("rate");
+
+const eventsEl =
+    document.getElementById("events");
+
+const percentageEl =
+    document.getElementById("percentage");
+
+const rightProgress =
+    document.getElementById("rightProgress");
+
+const progressBar =
+    document.getElementById("progressBar");
+
+const positionEl =
+    document.getElementById("position");
+
+const scanState =
+    document.getElementById("scanState");
+
+const headerStatus =
+    document.getElementById("headerStatus");
+
+const clock =
+    document.getElementById("clock");
+
+
+/* =========================================================
+   RANDOM DEMO ID
+   ========================================================= */
+
+function randomHex(length = 64) {
+
+    const chars =
+        "0123456789abcdef";
+
+    let result = "";
+
+    for (
+        let i = 0;
+        i < length;
+        i++
+    ) {
+
+        result +=
+            chars[
+                Math.floor(
+                    Math.random() * chars.length
+                )
+            ];
+
+    }
+
+    return result;
+}
+
+
+/* =========================================================
+   TIME
+   ========================================================= */
+
+function currentTime() {
+
+    return new Date()
+        .toLocaleTimeString(
+            [],
+            {
+                hour12: false
+            }
+        );
+
+}
+
+
+/* =========================================================
+   ADD STREAM LINE
+   ========================================================= */
+
+function addStreamLine(
+    index,
+    result = "CHECK"
+) {
+
+    const line =
+        document.createElement("div");
+
+    line.className =
+        "stream-line";
+
+    let resultClass = "";
+
+    if (result === "DEMO") {
+        resultClass = "ok";
+    }
+
+    line.innerHTML = `
+
+        <span class="stream-time">
+            ${currentTime()}
+        </span>
+
+        <span class="stream-index">
+            #${String(index).padStart(8, "0")}
+        </span>
+
+        <span class="stream-id">
+            ${randomHex(64)}
+        </span>
+
+        <span class="stream-result ${resultClass}">
+            ${result}
+        </span>
+
+    `;
+
+    stream.appendChild(line);
+
+    /*
+        Automatically keep the newest
+        activity visible.
+    */
+
+    stream.scrollTop =
+        stream.scrollHeight;
+
+
+    /*
+        Prevent unlimited DOM growth.
+    */
+
+    while (
+        stream.children.length > 180
+    ) {
+
+        stream.removeChild(
+            stream.firstChild
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   UPDATE STATS
+   ========================================================= */
+
+function updateStats() {
+
+    processedEl.textContent =
+        processed.toLocaleString();
+
+    positionEl.textContent =
+        processed.toLocaleString();
+
+    const percent =
+        Math.min(
+            processed / TOTAL * 100,
+            100
+        );
+
+    const display =
+        percent.toFixed(2);
+
+    percentageEl.textContent =
+        display;
+
+    rightProgress.textContent =
+        display + "%";
+
+    progressBar.style.width =
+        display + "%";
+
+
+    if (startedAt) {
+
+        const elapsed =
+            (Date.now() - startedAt) / 1000;
+
+        if (elapsed > 0) {
+
+            const speed =
+                Math.floor(
+                    processed / elapsed
+                );
+
+            rateEl.textContent =
+                speed.toLocaleString()
+                + " /s";
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   WORKER STATUS
+   ========================================================= */
+
+function setWorkers(status) {
+
+    document
+        .querySelectorAll(".worker-status")
+        .forEach(el => {
+
+            el.textContent = status;
+
+        });
+
+}
+
+
+/* =========================================================
+   SCAN LOOP
+   ========================================================= */
+
+function scanStep() {
+
+    if (!running)
+        return;
+
+
+    /*
+        Simulated processing only.
+    */
+
+    const batch =
+        Math.floor(
+            Math.random() * 1200
+        ) + 600;
+
+    processed += batch;
+
+
+    if (processed >= TOTAL) {
+
+        processed = TOTAL;
+
+        updateStats();
+
+        stopScanner();
+
+        addStreamLine(
+            processed,
+            "DONE"
+        );
+
+        return;
+
+    }
+
+
+    /*
+        Add several scrolling rows
+        per update to create the
+        terminal effect.
+    */
+
+    const rows =
+        Math.floor(
+            Math.random() * 4
+        ) + 3;
+
+
+    for (
+        let i = 0;
+        i < rows;
+        i++
+    ) {
+
+        const demo =
+            Math.random() < 0.015;
+
+        if (demo) {
+
+            demoEvents++;
+
+            eventsEl.textContent =
+                demoEvents;
+
+            addStreamLine(
+                processed - i,
+                "DEMO"
+            );
+
+        } else {
+
+            addStreamLine(
+                processed - i,
+                "CHECK"
+            );
+
+        }
+
+    }
+
+
+    updateStats();
+
+}
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+function startScanner() {
+
+    if (running)
+        return;
+
+
+    running = true;
+
+    startedAt =
+        Date.now();
+
+
+    startButton.textContent =
+        "SCANNER RUNNING";
+
+    startButton.classList.add(
+        "running"
+    );
+
+
+    scanState.textContent =
+        "RUNNING";
+
+    headerStatus.textContent =
+        "SCANNING";
+
+
+    setWorkers(
+        "ACTIVE"
+    );
+
+
+    addStreamLine(
+        processed,
+        "START"
+    );
+
+
+    timer =
+        setInterval(
+            scanStep,
+            130
+        );
+
+}
+
+
+/* =========================================================
+   STOP
+   ========================================================= */
+
+function stopScanner() {
+
+    running = false;
+
+    clearInterval(timer);
+
+    timer = null;
+
+
+    startButton.textContent =
+        "START SCANNER";
+
+    startButton.classList.remove(
+        "running"
+    );
+
+
+    scanState.textContent =
+        "STOPPED";
+
+    headerStatus.textContent =
+        "READY";
+
+
+    setWorkers(
+        "READY"
+    );
+
+}
+
+
+/* =========================================================
+   BUTTON
+   ========================================================= */
+
+startButton.addEventListener(
+    "click",
+    () => {
+
+        if (running) {
+
+            stopScanner();
+
+        } else {
+
+            startScanner();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   MODE BUTTONS
+   ========================================================= */
+
+document
+    .querySelectorAll(".mode button")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".mode button"
+                    )
+                    .forEach(b => {
+
+                        b.classList.remove(
+                            "active"
+                        );
+
+                    });
+
+                button.classList.add(
+                    "active"
+                );
+
+            }
+        );
+
+    });
+
+
+/* =========================================================
+   CLOCK
+   ========================================================= */
+
+setInterval(
+    () => {
+
+        const now =
+            new Date();
+
+        clock.textContent =
+            now.toLocaleTimeString(
+                [],
+                {
+                    hour12: false
+                }
+            );
+
+    },
+    1000
+);
+
+
+/* =========================================================
+   INITIAL TERMINAL CONTENT
+   ========================================================= */
+
+const initialMessages = [
+    "Terminal initialized.",
+    "Configuration loaded.",
+    "Scanner engine ready.",
+    "Waiting for start command..."
+];
+
+
+initialMessages.forEach(
+    (message, index) => {
+
+        const line =
+            document.createElement(
+                "div"
+            );
+
+        line.className =
+            "stream-line";
+
+        line.innerHTML = `
+
+            <span class="stream-time">
+                ${currentTime()}
+            </span>
+
+            <span class="stream-index">
+                SYS
+            </span>
+
+            <span class="stream-id">
+                ${message}
+            </span>
+
+            <span class="stream-result">
+                READY
+            </span>
+
+        `;
+
+        stream.appendChild(line);
+
+    }
+);
+
+</script>
+
+</body>
+</html>
