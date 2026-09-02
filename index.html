@@ -2,827 +2,1119 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LiteHunt Ranger — Terminal Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>LiteHunt Ranger</title>
 
 <style>
+/* =========================================================
+   RESET
+========================================================= */
+
 * {
     box-sizing: border-box;
-}
-
-html,
-body {
     margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+    padding: 0;
+}
+
+html {
+    background: #050607;
 }
 
 body {
-    background: #050505;
-    color: #d7d7d7;
-    font-family: "Courier New", Consolas, monospace;
-    font-size: 13px;
+    min-height: 100vh;
+    background: #050607;
+    color: #f5f7f8;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "SF Pro Display",
+        "SF Pro Text",
+        "Helvetica Neue",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    overflow-x: hidden;
 }
 
-/* =========================
-   APP
-========================= */
 
-.app {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background:
-        radial-gradient(
-            circle at 50% 0%,
-            rgba(255,255,255,.035),
-            transparent 45%
-        ),
-        #050505;
+/* =========================================================
+   COLORS
+========================================================= */
+
+:root {
+    --bg: #050607;
+    --panel: #0b0d0f;
+    --panel-light: #101316;
+    --border: #252a2e;
+
+    --white: #f5f7f8;
+    --gray: #899198;
+    --gray2: #687177;
+
+    --green: #39e58c;
+    --green-dark: #123c29;
+
+    --blue: #55aaff;
+    --cyan: #54e6e6;
+    --yellow: #ffd166;
+    --red: #ff5c5c;
 }
 
-/* =========================
+
+/* =========================================================
    HEADER
-========================= */
+========================================================= */
 
-.header {
-    height: 52px;
-    flex-shrink: 0;
+header {
+    height: 68px;
+
+    position: sticky;
+    top: 0;
+    z-index: 100;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    padding: 0 18px;
+    padding: 0 20px;
 
-    background: #090909;
-    border-bottom: 1px solid #242424;
-}
+    background: rgba(5, 7, 8, .97);
+    border-bottom: 1px solid var(--border);
 
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    backdrop-filter: blur(12px);
 }
 
 .logo {
-    width: 30px;
-    height: 30px;
-
-    display: grid;
-    place-items: center;
-
-    border: 1px solid #3a3a3a;
-    background: #111;
-    color: #eee;
-
-    font-weight: bold;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: .3px;
+    white-space: nowrap;
 }
 
-.title {
-    color: #eee;
-    font-weight: bold;
-    letter-spacing: .4px;
+.logo span {
+    color: var(--green);
 }
 
-.version {
-    color: #666;
-    font-size: 11px;
+
+/* =========================================================
+   CENTER WALLET
+========================================================= */
+
+.wallet {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    text-align: center;
+
+    min-width: 100px;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "SF Pro Display",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
 }
 
-.header-right {
+.wallet-label {
+    color: #777f85;
+
+    font-size: 9px;
+    font-weight: 600;
+
+    letter-spacing: 1.6px;
+
+    text-transform: uppercase;
+
+    margin-bottom: 2px;
+}
+
+.wallet-value {
+    color: #fff;
+
+    font-size: 21px;
+    line-height: 22px;
+
+    font-weight: 700;
+
+    letter-spacing: -.6px;
+
+    white-space: nowrap;
+
+    transition: color .2s;
+}
+
+.wallet-value.added {
+    animation: walletPop .35s ease;
+}
+
+@keyframes walletPop {
+
+    0% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(1.15);
+        color: var(--green);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status {
     display: flex;
     align-items: center;
-    gap: 14px;
-}
 
-.live {
-    display: flex;
-    align-items: center;
     gap: 7px;
 
-    color: #65e39a;
+    color: var(--green);
+
+    font-family: monospace;
     font-size: 11px;
+    font-weight: 700;
+
+    white-space: nowrap;
 }
 
-.live-dot {
-    width: 7px;
-    height: 7px;
+.status-dot {
+    width: 8px;
+    height: 8px;
+
     border-radius: 50%;
 
-    background: #65e39a;
-    box-shadow: 0 0 9px #65e39a;
+    background: var(--green);
+
+    box-shadow:
+        0 0 5px var(--green),
+        0 0 12px rgba(57,229,140,.5);
 }
 
-/* =========================
-   MAIN TERMINAL
-========================= */
+
+/* =========================================================
+   MAIN DESKTOP
+========================================================= */
 
 .main {
-    min-height: 0;
-    flex: 1;
+    width: 100%;
+    max-width: 1550px;
+
+    margin: 0 auto;
+
+    padding: 14px;
 
     display: grid;
-    grid-template-columns: 270px 1fr 300px;
 
-    gap: 1px;
+    grid-template-columns:
+        260px
+        minmax(450px, 1fr)
+        260px;
 
-    background: #252525;
+    gap: 12px;
 }
 
-/* =========================
-   PANELS
-========================= */
+
+/* =========================================================
+   PANEL
+========================================================= */
 
 .panel {
     min-width: 0;
-    min-height: 0;
 
-    background: #080808;
+    background: var(--panel);
 
-    display: flex;
-    flex-direction: column;
+    border: 1px solid var(--border);
+
+    border-radius: 8px;
+
+    overflow: hidden;
 }
 
-.panel-header {
-    height: 38px;
-    flex-shrink: 0;
+.panel-title {
+    min-height: 42px;
 
     display: flex;
     align-items: center;
-    justify-content: space-between;
 
-    padding: 0 12px;
+    padding: 0 13px;
 
-    background: #0c0c0c;
-    border-bottom: 1px solid #202020;
+    background: var(--panel-light);
 
-    color: #9d9d9d;
-    font-size: 11px;
-    letter-spacing: .6px;
+    border-bottom: 1px solid var(--border);
+
+    color: #dfe4e7;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    letter-spacing: .5px;
 }
 
-.panel-header span:last-child {
-    color: #555;
-}
-
-/* =========================
-   LEFT CONFIG PANEL
-========================= */
-
-.config {
+.panel-body {
     padding: 13px;
-    overflow-y: auto;
 }
 
-.section {
-    margin-bottom: 18px;
+
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+.field {
+    margin-bottom: 14px;
 }
 
-.section-title {
-    color: #777;
+.field label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: var(--gray);
+
     font-size: 10px;
-    margin-bottom: 9px;
+    font-weight: 700;
+
+    letter-spacing: .7px;
+
     text-transform: uppercase;
 }
 
-.input-row {
-    margin-bottom: 9px;
-}
-
-.input-label {
-    color: #666;
-    font-size: 10px;
-    margin-bottom: 5px;
-}
-
-.fake-input {
-    min-height: 31px;
-
-    display: flex;
-    align-items: center;
-
-    padding: 0 9px;
-
-    background: #0d0d0d;
-    border: 1px solid #292929;
-
-    color: #cfcfcf;
-
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.fake-input.active {
-    border-color: #555;
-    color: #eee;
-}
-
-.mode {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-
-    border: 1px solid #282828;
-}
-
-.mode button {
-    border: 0;
-    border-right: 1px solid #282828;
-
-    background: #0b0b0b;
-    color: #666;
-
-    padding: 8px 3px;
-
-    font-family: inherit;
-    font-size: 9px;
-
-    cursor: pointer;
-}
-
-.mode button:last-child {
-    border-right: 0;
-}
-
-.mode button.active {
-    background: #171717;
-    color: #eee;
-}
-
-.start-button {
+input {
     width: 100%;
 
     padding: 10px;
 
-    background: #d8d8d8;
-    color: #050505;
+    border: 1px solid #2b3035;
+    border-radius: 5px;
 
-    border: 0;
+    outline: none;
 
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: bold;
+    background: #050708;
 
-    cursor: pointer;
-}
+    color: #e9edef;
 
-.start-button:hover {
-    background: #fff;
-}
-
-.start-button.running {
-    background: #222;
-    color: #bbb;
-    border: 1px solid #333;
-}
-
-.small-note {
-    margin-top: 10px;
-
-    color: #444;
-    font-size: 9px;
-    line-height: 1.5;
-}
-
-/* =========================
-   CENTER
-========================= */
-
-.center {
-    position: relative;
-    overflow: hidden;
-}
-
-.center-top {
-    padding: 13px;
-
-    border-bottom: 1px solid #202020;
-}
-
-.scan-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    margin-bottom: 10px;
-}
-
-.scan-title strong {
-    color: #ddd;
+    font-family: monospace;
     font-size: 12px;
 }
 
-.scan-state {
-    color: #65e39a;
+input:focus {
+    border-color: var(--blue);
+}
+
+
+/* =========================================================
+   MODES
+========================================================= */
+
+.modes {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 5px;
+}
+
+.mode {
+    min-height: 36px;
+
+    border: 1px solid #30363b;
+    border-radius: 5px;
+
+    background: #080a0b;
+
+    color: #aeb5ba;
+
+    cursor: pointer;
+
+    font-family: monospace;
     font-size: 10px;
+    font-weight: 700;
+}
+
+.mode:hover {
+    border-color: #596168;
+}
+
+.mode.active {
+    color: var(--green);
+
+    border-color: var(--green);
+
+    background: rgba(57,229,140,.06);
+}
+
+
+/* =========================================================
+   START BUTTON
+========================================================= */
+
+.start-btn {
+    width: 100%;
+
+    min-height: 42px;
+
+    border: 0;
+    border-radius: 5px;
+
+    background: var(--green);
+
+    color: #00150a;
+
+    cursor: pointer;
+
+    font-size: 12px;
+    font-weight: 900;
+
+    letter-spacing: .3px;
+}
+
+.start-btn:hover {
+    filter: brightness(1.08);
+}
+
+.start-btn.stop {
+    background: var(--red);
+    color: #fff;
+}
+
+
+/* =========================================================
+   SCANNER
+========================================================= */
+
+.scanner {
+    min-width: 0;
+}
+
+.progress-info {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 7px;
+
+    color: var(--gray);
+
+    font-family: monospace;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.progress-percent {
+    color: var(--green);
 }
 
 .progress {
-    height: 5px;
     width: 100%;
+    height: 8px;
 
-    background: #171717;
+    margin-bottom: 12px;
+
+    background: #191d20;
+
+    border-radius: 20px;
 
     overflow: hidden;
 }
 
 .progress-bar {
-    height: 100%;
     width: 0%;
+    height: 100%;
 
-    background: #cfcfcf;
+    background: var(--green);
 
-    transition: width .15s linear;
+    box-shadow:
+        0 0 8px rgba(57,229,140,.4);
+
+    transition: width .12s linear;
 }
 
-.scan-meta {
-    margin-top: 8px;
 
-    display: flex;
-    justify-content: space-between;
-
-    color: #555;
-    font-size: 9px;
-}
-
-/* =========================
-   SCROLLING ID STREAM
-========================= */
+/* =========================================================
+   TERMINAL STREAM
+========================================================= */
 
 .stream {
-    min-height: 0;
-    flex: 1;
+    height: 570px;
 
-    overflow-y: auto;
+    overflow: hidden;
 
-    padding: 8px 0;
+    padding: 8px;
+
+    background: #020304;
+
+    border: 1px solid #15191c;
+
+    font-family:
+        "SF Mono",
+        "Cascadia Mono",
+        Consolas,
+        monospace;
 
     font-size: 11px;
 
-    scrollbar-width: thin;
-    scrollbar-color: #292929 transparent;
+    line-height: 1.7;
 }
 
 .stream::-webkit-scrollbar {
     width: 5px;
 }
 
-.stream::-webkit-scrollbar-thumb {
-    background: #292929;
+.stream::-webkit-scrollbar-track {
+    background: #050607;
 }
 
-.stream-line {
+.stream::-webkit-scrollbar-thumb {
+    background: #30363a;
+    border-radius: 5px;
+}
+
+
+/* =========================================================
+   STREAM ROW
+========================================================= */
+
+.line {
     display: grid;
-    grid-template-columns: 55px 75px 1fr 65px;
+
+    grid-template-columns:
+        65px
+        78px
+        minmax(120px, 1fr)
+        120px;
 
     gap: 8px;
 
-    padding: 5px 13px;
+    min-height: 20px;
 
-    border-bottom: 1px solid rgba(255,255,255,.018);
+    align-items: center;
+
+    border-bottom: 1px solid rgba(255,255,255,.025);
+}
+
+.time {
+    color: #737c83;
+}
+
+.index {
+    color: var(--blue);
+}
+
+.demo-id {
+    min-width: 0;
+
+    overflow: hidden;
+
+    color: #b8c0c5;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+.result {
+    text-align: right;
+
+    font-weight: 800;
 
     white-space: nowrap;
 }
 
-.stream-line:hover {
-    background: #0d0d0d;
+.result.check {
+    color: #7d878e;
 }
 
-.stream-time {
-    color: #454545;
+.result.found {
+    color: var(--green);
+
+    text-shadow:
+        0 0 8px rgba(57,229,140,.22);
 }
 
-.stream-index {
-    color: #686868;
+.result.info {
+    color: var(--cyan);
 }
 
-.stream-id {
-    color: #aaa;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
+.result.warn {
+    color: var(--yellow);
 }
 
-.stream-result {
-    text-align: right;
-    color: #555;
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.stat {
+    padding: 10px 0;
+
+    border-bottom: 1px solid #1d2225;
 }
 
-.stream-result.ok {
-    color: #65e39a;
-}
+.stat-label {
+    color: var(--gray);
 
-.stream-result.check {
-    color: #777;
-}
+    font-size: 10px;
+    font-weight: 700;
 
-/* =========================
-   RIGHT STATS
-========================= */
+    letter-spacing: .5px;
 
-.stats {
-    padding: 12px;
-    overflow-y: auto;
-}
-
-.stat-card {
-    margin-bottom: 10px;
-
-    padding: 11px;
-
-    background: #0b0b0b;
-    border: 1px solid #202020;
-}
-
-.stat-name {
-    color: #555;
-    font-size: 9px;
-    margin-bottom: 7px;
+    text-transform: uppercase;
 }
 
 .stat-value {
-    color: #ddd;
+    margin-top: 3px;
+
+    font-family: monospace;
+
     font-size: 18px;
-    font-weight: bold;
+    font-weight: 800;
 }
 
-.stat-value.green {
-    color: #65e39a;
+.green {
+    color: var(--green);
 }
 
-.stat-value.yellow {
-    color: #d8c16b;
+.blue {
+    color: var(--blue);
 }
 
-.stat-value.blue {
-    color: #8db9e8;
+.yellow {
+    color: var(--yellow);
 }
 
-.divider {
-    height: 1px;
-    background: #202020;
-    margin: 15px 0;
+
+/* =========================================================
+   WORKERS
+========================================================= */
+
+.workers {
+    margin-top: 15px;
+}
+
+.worker-title {
+    margin-bottom: 5px;
+
+    color: var(--gray);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: .5px;
 }
 
 .worker {
     display: flex;
+
+    align-items: center;
     justify-content: space-between;
 
-    padding: 6px 0;
+    padding: 5px 0;
 
-    border-bottom: 1px solid #161616;
+    font-family: monospace;
 
     font-size: 10px;
 }
 
-.worker-name {
-    color: #777;
+.worker-active {
+    color: var(--green);
 }
 
-.worker-status {
-    color: #65e39a;
+.worker-idle {
+    color: #626b71;
 }
 
-/* =========================
+
+/* =========================================================
    FOOTER
-========================= */
+========================================================= */
 
-.footer {
-    height: 27px;
-    flex-shrink: 0;
+footer {
+    padding: 12px;
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    border-top: 1px solid var(--border);
 
-    padding: 0 13px;
+    color: #555e64;
 
-    background: #090909;
-    border-top: 1px solid #222;
+    text-align: center;
 
-    color: #4c4c4c;
-    font-size: 9px;
+    font-family: monospace;
+
+    font-size: 10px;
 }
 
-.footer span:last-child {
-    color: #666;
-}
 
-/* =========================
-   MOBILE
-========================= */
+/* =========================================================
+   TABLET / PHONE
+========================================================= */
 
-@media(max-width: 850px) {
+@media (max-width: 850px) {
 
-    html,
     body {
-        overflow: auto;
+        width: 100%;
     }
 
-    .app {
-        min-height: 100vh;
-        height: auto;
+    header {
+        height: 72px;
+
+        padding: 0 12px;
     }
 
-    .header {
-        height: 48px;
+    .logo {
+        font-size: 16px;
     }
 
-    .version {
-        display: none;
+    .wallet-value {
+        font-size: 22px;
     }
+
+    .wallet-label {
+        font-size: 8px;
+    }
+
+    .status {
+        font-size: 10px;
+    }
+
+
+    /*
+       IMPORTANT:
+
+       PHONE ORDER
+
+       1. SCANNER
+       2. CONFIGURATION
+       3. STATISTICS
+    */
 
     .main {
-        min-height: calc(100vh - 75px);
-
         display: flex;
+
         flex-direction: column;
+
+        width: 100%;
+
+        padding: 8px;
+
+        gap: 10px;
     }
 
-    .panel {
-        min-height: 0;
-    }
-
-    .panel.left {
+    .scanner {
         order: 1;
     }
 
-    .panel.center {
+    .main > .panel:first-child {
         order: 2;
-        height: 440px;
     }
 
-    .panel.right {
+    .main > .panel:last-child {
         order: 3;
     }
 
-    .config {
-        max-height: 340px;
+
+    /* Bigger phone UI */
+
+    .panel-title {
+        min-height: 45px;
+
+        padding: 0 13px;
+
+        font-size: 14px;
     }
 
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
+    .panel-body {
+        padding: 13px;
     }
 
-    .stat-card {
-        margin: 0;
+
+    /* Scanner */
+
+    .progress-info {
+        font-size: 13px;
     }
 
-    .divider,
-    .worker {
-        display: none;
+    .progress {
+        height: 9px;
+
+        margin-bottom: 10px;
     }
 
-    .stream-line {
-        grid-template-columns: 48px 58px 1fr 55px;
-        padding: 5px 9px;
-        font-size: 9px;
+    .stream {
+        height: 455px;
+
+        padding: 8px;
+
+        font-size: 12px;
+
+        line-height: 1.85;
     }
 
-    .footer {
-        display: none;
+    .line {
+        grid-template-columns:
+            53px
+            62px
+            minmax(80px, 1fr)
+            105px;
+
+        gap: 5px;
+
+        min-height: 23px;
     }
-}
 
-@media(max-width: 450px) {
 
-    .header {
-        padding: 0 10px;
-    }
+    /* Config */
 
-    .title {
+    .field label {
         font-size: 11px;
     }
 
-    .live {
-        font-size: 9px;
+    input {
+        min-height: 43px;
+
+        padding: 10px;
+
+        font-size: 14px;
     }
 
-    .panel.center {
-        height: 390px;
+    .mode {
+        min-height: 42px;
+
+        font-size: 12px;
     }
 
-    .stats {
-        grid-template-columns: 1fr 1fr;
+    .start-btn {
+        min-height: 46px;
+
+        font-size: 14px;
+    }
+
+
+    /* Stats */
+
+    .stat-label {
+        font-size: 11px;
     }
 
     .stat-value {
-        font-size: 15px;
+        font-size: 21px;
+    }
+
+    .worker {
+        padding: 6px 0;
+
+        font-size: 12px;
     }
 }
+
+
+/* =========================================================
+   SMALL PHONE
+========================================================= */
+
+@media (max-width: 450px) {
+
+    header {
+        height: 72px;
+    }
+
+    .logo {
+        font-size: 14px;
+    }
+
+    .wallet-value {
+        font-size: 20px;
+    }
+
+    .wallet-label {
+        font-size: 7px;
+    }
+
+    .status {
+        font-size: 9px;
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+    }
+
+
+    .main {
+        padding: 7px;
+    }
+
+
+    .stream {
+        height: 420px;
+
+        font-size: 11px;
+
+        line-height: 1.85;
+    }
+
+    .line {
+        grid-template-columns:
+            47px
+            54px
+            minmax(60px, 1fr)
+            91px;
+
+        gap: 4px;
+    }
+
+
+    .stat-grid {
+        display: grid;
+
+        grid-template-columns: 1fr 1fr;
+
+        column-gap: 12px;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONE
+========================================================= */
+
+@media (max-width: 360px) {
+
+    .logo {
+        font-size: 13px;
+    }
+
+    .wallet-value {
+        font-size: 18px;
+    }
+
+    .stream {
+        font-size: 10px;
+    }
+
+    .line {
+        grid-template-columns:
+            43px
+            48px
+            minmax(55px, 1fr)
+            82px;
+
+        gap: 3px;
+    }
+}
+
 </style>
 </head>
 
+
 <body>
 
-<div class="app">
 
-    <!-- HEADER -->
-    <header class="header">
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
-        <div class="brand">
+<header>
 
-            <div class="logo">L</div>
+    <div class="logo">
+        LiteHunt <span>Ranger</span>
+    </div>
 
-            <div>
-                <div class="title">
-                    LiteHunt Ranger
-                </div>
 
-                <div class="version">
-                    terminal scanner interface
-                </div>
-            </div>
+    <!-- CENTER WALLET -->
 
+    <div class="wallet">
+
+        <div class="wallet-label">
+            Demo Wallet
         </div>
 
-        <div class="header-right">
-
-            <div class="live">
-                <span class="live-dot"></span>
-                <span id="headerStatus">READY</span>
-            </div>
-
+        <div
+            class="wallet-value"
+            id="wallet"
+        >
+            $450.00
         </div>
 
-    </header>
+    </div>
 
 
-    <!-- MAIN -->
-    <main class="main">
+    <!-- STATUS -->
 
-        <!-- LEFT -->
-        <section class="panel left">
+    <div class="status">
 
-            <div class="panel-header">
-                <span>CONFIGURATION</span>
-                <span>01</span>
+        <span
+            class="status-dot"
+            id="statusDot"
+        ></span>
+
+        <span id="statusText">
+            READY
+        </span>
+
+    </div>
+
+</header>
+
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="main">
+
+
+    <!-- =================================================
+         CONFIGURATION
+    ================================================= -->
+
+    <section class="panel">
+
+        <div class="panel-title">
+            CONFIGURATION
+        </div>
+
+        <div class="panel-body">
+
+
+            <div class="field">
+
+                <label>
+                    Start Range
+                </label>
+
+                <input
+                    id="startRange"
+                    value="0000000000000000"
+                >
+
             </div>
 
-            <div class="config">
 
-                <div class="section">
+            <div class="field">
 
-                    <div class="section-title">
-                        Scan Range
-                    </div>
+                <label>
+                    End Range
+                </label>
 
-                    <div class="input-row">
-                        <div class="input-label">
-                            START
-                        </div>
+                <input
+                    id="endRange"
+                    value="ffffffffffffffff"
+                >
 
-                        <div class="fake-input">
-                            0000000000000000
-                        </div>
-                    </div>
-
-                    <div class="input-row">
-                        <div class="input-label">
-                            END
-                        </div>
-
-                        <div class="fake-input">
-                            FFFFFFFFFFFFFFFF
-                        </div>
-                    </div>
-
-                </div>
+            </div>
 
 
-                <div class="section">
+            <div class="field">
 
-                    <div class="section-title">
-                        Scanner Mode
-                    </div>
+                <label>
+                    Scanner Mode
+                </label>
 
-                    <div class="mode">
+                <div class="modes">
 
-                        <button class="active">
-                            OFFLINE
-                        </button>
-
-                        <button>
-                            ONLINE
-                        </button>
-
-                        <button>
-                            THREAD
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-                <div class="section">
-
-                    <div class="section-title">
-                        Parameters
-                    </div>
-
-                    <div class="input-row">
-
-                        <div class="input-label">
-                            BATCH SIZE
-                        </div>
-
-                        <div class="fake-input active">
-                            1,000
-                        </div>
-
-                    </div>
-
-                    <div class="input-row">
-
-                        <div class="input-label">
-                            WORKERS
-                        </div>
-
-                        <div class="fake-input active">
-                            08
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="section">
-
-                    <button
-                        class="start-button"
-                        id="startButton"
-                    >
-                        START SCANNER
+                    <button class="mode active">
+                        OFFLINE
                     </button>
 
-                    <div class="small-note">
-                        Demonstration interface only.
-                        The browser does not generate,
-                        search or validate cryptocurrency
-                        private keys.
-                    </div>
+                    <button class="mode">
+                        ONLINE
+                    </button>
+
+                    <button class="mode">
+                        THREAD
+                    </button>
 
                 </div>
 
             </div>
 
-        </section>
 
+            <div class="field">
 
-        <!-- CENTER -->
-        <section class="panel center">
+                <label>
+                    Batch Size
+                </label>
 
-            <div class="panel-header">
-                <span>LIVE SCANNER</span>
-                <span id="clock">00:00:00</span>
+                <input value="1000">
+
             </div>
 
 
-            <div class="center-top">
+            <div class="field">
 
-                <div class="scan-title">
+                <label>
+                    Workers
+                </label>
 
-                    <strong>
-                        RANGE PROCESSOR
-                    </strong>
+                <input value="8">
 
-                    <span
-                        class="scan-state"
-                        id="scanState"
-                    >
-                        IDLE
-                    </span>
+            </div>
 
-                </div>
 
-                <div class="progress">
+            <button
+                class="start-btn"
+                id="startBtn"
+            >
+                START SCANNER
+            </button>
 
-                    <div
-                        class="progress-bar"
-                        id="progressBar"
-                    ></div>
+        </div>
 
-                </div>
+    </section>
 
-                <div class="scan-meta">
 
-                    <span>
-                        POSITION:
-                        <span id="position">0</span>
-                    </span>
 
-                    <span>
-                        <span id="percentage">0.00</span>%
-                    </span>
+    <!-- =================================================
+         LIVE SCANNER
+    ================================================= -->
 
-                </div>
+    <section class="panel scanner">
+
+        <div class="panel-title">
+            LIVE SCANNER
+        </div>
+
+        <div class="panel-body">
+
+
+            <div class="progress-info">
+
+                <span>
+                    RANGE PROGRESS
+                </span>
+
+                <span
+                    class="progress-percent"
+                    id="progressText"
+                >
+                    0.00%
+                </span>
+
+            </div>
+
+
+            <div class="progress">
+
+                <div
+                    class="progress-bar"
+                    id="progressBar"
+                ></div>
 
             </div>
 
@@ -832,27 +1124,36 @@ body {
                 id="stream"
             ></div>
 
-        </section>
+        </div>
+
+    </section>
 
 
-        <!-- RIGHT -->
-        <section class="panel right">
 
-            <div class="panel-header">
-                <span>STATISTICS</span>
-                <span>03</span>
-            </div>
+    <!-- =================================================
+         STATISTICS
+    ================================================= -->
 
-            <div class="stats">
+    <section class="panel">
 
-                <div class="stat-card">
+        <div class="panel-title">
+            STATISTICS
+        </div>
 
-                    <div class="stat-name">
-                        PROCESSED
+        <div class="panel-body">
+
+
+            <div class="stat-grid">
+
+
+                <div class="stat">
+
+                    <div class="stat-label">
+                        Processed
                     </div>
 
                     <div
-                        class="stat-value"
+                        class="stat-value blue"
                         id="processed"
                     >
                         0
@@ -861,30 +1162,62 @@ body {
                 </div>
 
 
-                <div class="stat-card">
+                <div class="stat">
 
-                    <div class="stat-name">
-                        CURRENT RATE
+                    <div class="stat-label">
+                        Current Rate
                     </div>
 
                     <div
-                        class="stat-value blue"
+                        class="stat-value green"
                         id="rate"
                     >
-                        0 /s
+                        0/s
                     </div>
 
                 </div>
 
 
-                <div class="stat-card">
+                <div class="stat">
 
-                    <div class="stat-name">
-                        DEMO EVENTS
+                    <div class="stat-label">
+                        Found
                     </div>
 
                     <div
                         class="stat-value green"
+                        id="found"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-label">
+                        Earned
+                    </div>
+
+                    <div
+                        class="stat-value green"
+                        id="earned"
+                    >
+                        $0.00
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-label">
+                        Events
+                    </div>
+
+                    <div
+                        class="stat-value yellow"
                         id="events"
                     >
                         0
@@ -893,156 +1226,148 @@ body {
                 </div>
 
 
-                <div class="stat-card">
-
-                    <div class="stat-name">
-                        RANGE PROGRESS
-                    </div>
-
-                    <div
-                        class="stat-value yellow"
-                        id="rightProgress"
-                    >
-                        0.00%
-                    </div>
-
-                </div>
+            </div>
 
 
-                <div class="divider"></div>
 
+            <!-- WORKERS -->
 
-                <div class="section-title">
+            <div class="workers">
+
+                <div class="worker-title">
                     WORKERS
                 </div>
 
 
-                <div id="workers">
+                <div class="worker">
+                    <span>WORKER-01</span>
+                    <span class="worker-active">ACTIVE</span>
+                </div>
 
-                    <div class="worker">
-                        <span class="worker-name">worker-01</span>
-                        <span class="worker-status">READY</span>
-                    </div>
+                <div class="worker">
+                    <span>WORKER-02</span>
+                    <span class="worker-active">ACTIVE</span>
+                </div>
 
-                    <div class="worker">
-                        <span class="worker-name">worker-02</span>
-                        <span class="worker-status">READY</span>
-                    </div>
+                <div class="worker">
+                    <span>WORKER-03</span>
+                    <span class="worker-active">ACTIVE</span>
+                </div>
 
-                    <div class="worker">
-                        <span class="worker-name">worker-03</span>
-                        <span class="worker-status">READY</span>
-                    </div>
+                <div class="worker">
+                    <span>WORKER-04</span>
+                    <span class="worker-active">ACTIVE</span>
+                </div>
 
-                    <div class="worker">
-                        <span class="worker-name">worker-04</span>
-                        <span class="worker-status">READY</span>
-                    </div>
+                <div class="worker">
+                    <span>WORKER-05</span>
+                    <span class="worker-active">ACTIVE</span>
+                </div>
 
-                    <div class="worker">
-                        <span class="worker-name">worker-05</span>
-                        <span class="worker-status">READY</span>
-                    </div>
+                <div class="worker">
+                    <span>WORKER-06</span>
+                    <span class="worker-idle">IDLE</span>
+                </div>
 
-                    <div class="worker">
-                        <span class="worker-name">worker-06</span>
-                        <span class="worker-status">READY</span>
-                    </div>
+                <div class="worker">
+                    <span>WORKER-07</span>
+                    <span class="worker-active">ACTIVE</span>
+                </div>
 
-                    <div class="worker">
-                        <span class="worker-name">worker-07</span>
-                        <span class="worker-status">READY</span>
-                    </div>
-
-                    <div class="worker">
-                        <span class="worker-name">worker-08</span>
-                        <span class="worker-status">READY</span>
-                    </div>
-
+                <div class="worker">
+                    <span>WORKER-08</span>
+                    <span class="worker-active">ACTIVE</span>
                 </div>
 
             </div>
 
-        </section>
+        </div>
 
-    </main>
+    </section>
+
+</main>
 
 
-    <!-- FOOTER -->
-    <footer class="footer">
 
-        <span>
-            LITEHUNT RANGER // TERMINAL DEMO
-        </span>
+<!-- =====================================================
+     FOOTER
+===================================================== -->
 
-        <span>
-            SYSTEM READY
-        </span>
+<footer>
+    LiteHunt Ranger • Browser demonstration interface • Simulated results only
+</footer>
 
-    </footer>
-
-</div>
 
 
 <script>
 
 /* =========================================================
-   DEMO SCANNER
-   ========================================================= */
+   STATE
+========================================================= */
 
 let running = false;
 
 let processed = 0;
-let demoEvents = 0;
 
-let startedAt = 0;
+let found = 0;
+
+let events = 0;
+
+let earned = 0;
+
+let wallet = 450;
+
+let progress = 0;
+
 let timer = null;
 
-const TOTAL = 1000000;
+let scrollAnimation = null;
 
 
-/* Elements */
-
-const startButton =
-    document.getElementById("startButton");
+/* =========================================================
+   ELEMENTS
+========================================================= */
 
 const stream =
     document.getElementById("stream");
 
+const startBtn =
+    document.getElementById("startBtn");
+
+const walletEl =
+    document.getElementById("wallet");
+
 const processedEl =
     document.getElementById("processed");
 
-const rateEl =
-    document.getElementById("rate");
+const foundEl =
+    document.getElementById("found");
+
+const earnedEl =
+    document.getElementById("earned");
 
 const eventsEl =
     document.getElementById("events");
 
-const percentageEl =
-    document.getElementById("percentage");
-
-const rightProgress =
-    document.getElementById("rightProgress");
+const rateEl =
+    document.getElementById("rate");
 
 const progressBar =
     document.getElementById("progressBar");
 
-const positionEl =
-    document.getElementById("position");
+const progressText =
+    document.getElementById("progressText");
 
-const scanState =
-    document.getElementById("scanState");
+const statusText =
+    document.getElementById("statusText");
 
-const headerStatus =
-    document.getElementById("headerStatus");
-
-const clock =
-    document.getElementById("clock");
+const statusDot =
+    document.getElementById("statusDot");
 
 
 /* =========================================================
-   RANDOM DEMO ID
-   ========================================================= */
+   RANDOM HEX DISPLAY
+========================================================= */
 
 function randomHex(length = 64) {
 
@@ -1060,7 +1385,8 @@ function randomHex(length = 64) {
         result +=
             chars[
                 Math.floor(
-                    Math.random() * chars.length
+                    Math.random() *
+                    chars.length
                 )
             ];
 
@@ -1072,79 +1398,182 @@ function randomHex(length = 64) {
 
 /* =========================================================
    TIME
-   ========================================================= */
+========================================================= */
 
 function currentTime() {
 
-    return new Date()
-        .toLocaleTimeString(
-            [],
-            {
-                hour12: false
-            }
-        );
+    const now =
+        new Date();
+
+    return now.toLocaleTimeString(
+        [],
+        {
+            hour12: false
+        }
+    );
+}
+
+
+/* =========================================================
+   RANDOM REWARD
+   $5.00 - $10.00
+========================================================= */
+
+function randomReward() {
+
+    return Number(
+        (
+            5 +
+            Math.random() * 5
+        ).toFixed(2)
+    );
 
 }
 
 
 /* =========================================================
-   ADD STREAM LINE
-   ========================================================= */
+   ADD REWARD TO WALLET
+========================================================= */
 
-function addStreamLine(
-    index,
-    result = "CHECK"
-) {
+function addReward(amount) {
+
+    wallet += amount;
+
+    earned += amount;
+
+
+    walletEl.textContent =
+        "$" +
+        wallet.toFixed(2);
+
+
+    earnedEl.textContent =
+        "$" +
+        earned.toFixed(2);
+
+
+    walletEl.classList.remove(
+        "added"
+    );
+
+
+    /* Force animation restart */
+
+    void walletEl.offsetWidth;
+
+
+    walletEl.classList.add(
+        "added"
+    );
+
+}
+
+
+/* =========================================================
+   ADD TERMINAL LINE
+========================================================= */
+
+function addLine(type = "check") {
 
     const line =
         document.createElement("div");
 
     line.className =
-        "stream-line";
+        "line";
 
-    let resultClass = "";
 
-    if (result === "DEMO") {
-        resultClass = "ok";
+    let resultText =
+        "CHECK";
+
+    let resultClass =
+        "check";
+
+
+    /* -----------------------------------------
+       FOUND
+    ----------------------------------------- */
+
+    if (type === "found") {
+
+        const reward =
+            randomReward();
+
+
+        addReward(reward);
+
+
+        found++;
+
+
+        resultText =
+            "FOUND +$" +
+            reward.toFixed(2);
+
+
+        resultClass =
+            "found";
+
     }
+
+
+    /* -----------------------------------------
+       ACTIVE
+    ----------------------------------------- */
+
+    else if (type === "info") {
+
+        resultText =
+            "ACTIVE";
+
+        resultClass =
+            "info";
+
+    }
+
+
+    /* -----------------------------------------
+       WAIT
+    ----------------------------------------- */
+
+    else if (type === "warn") {
+
+        resultText =
+            "WAIT";
+
+        resultClass =
+            "warn";
+
+    }
+
 
     line.innerHTML = `
 
-        <span class="stream-time">
+        <span class="time">
             ${currentTime()}
         </span>
 
-        <span class="stream-index">
-            #${String(index).padStart(8, "0")}
+        <span class="index">
+            #${processed.toLocaleString()}
         </span>
 
-        <span class="stream-id">
+        <span class="demo-id">
             ${randomHex(64)}
         </span>
 
-        <span class="stream-result ${resultClass}">
-            ${result}
+        <span class="result ${resultClass}">
+            ${resultText}
         </span>
 
     `;
 
+
     stream.appendChild(line);
 
-    /*
-        Automatically keep the newest
-        activity visible.
-    */
 
-    stream.scrollTop =
-        stream.scrollHeight;
-
-
-    /*
-        Prevent unlimited DOM growth.
-    */
+    /* Keep terminal lightweight */
 
     while (
-        stream.children.length > 180
+        stream.children.length > 160
     ) {
 
         stream.removeChild(
@@ -1157,280 +1586,258 @@ function addStreamLine(
 
 
 /* =========================================================
-   UPDATE STATS
-   ========================================================= */
+   FAST AUTO SCROLL
+========================================================= */
 
-function updateStats() {
+function autoScrollScanner() {
+
+    if (!running) {
+        return;
+    }
+
+
+    /*
+       Very fast smooth terminal
+       movement.
+    */
+
+    stream.scrollTop += 4.5;
+
+
+    scrollAnimation =
+        requestAnimationFrame(
+            autoScrollScanner
+        );
+
+}
+
+
+/* =========================================================
+   UPDATE UI
+========================================================= */
+
+function updateUI() {
 
     processedEl.textContent =
         processed.toLocaleString();
 
-    positionEl.textContent =
-        processed.toLocaleString();
 
-    const percent =
-        Math.min(
-            processed / TOTAL * 100,
-            100
-        );
+    foundEl.textContent =
+        found;
 
-    const display =
-        percent.toFixed(2);
 
-    percentageEl.textContent =
-        display;
+    eventsEl.textContent =
+        events;
 
-    rightProgress.textContent =
-        display + "%";
 
     progressBar.style.width =
-        display + "%";
+        progress + "%";
 
 
-    if (startedAt) {
-
-        const elapsed =
-            (Date.now() - startedAt) / 1000;
-
-        if (elapsed > 0) {
-
-            const speed =
-                Math.floor(
-                    processed / elapsed
-                );
-
-            rateEl.textContent =
-                speed.toLocaleString()
-                + " /s";
-
-        }
-
-    }
+    progressText.textContent =
+        progress.toFixed(2) +
+        "%";
 
 }
 
 
 /* =========================================================
-   WORKER STATUS
-   ========================================================= */
-
-function setWorkers(status) {
-
-    document
-        .querySelectorAll(".worker-status")
-        .forEach(el => {
-
-            el.textContent = status;
-
-        });
-
-}
-
-
-/* =========================================================
-   SCAN LOOP
-   ========================================================= */
-
-function scanStep() {
-
-    if (!running)
-        return;
-
-
-    /*
-        Simulated processing only.
-    */
-
-    const batch =
-        Math.floor(
-            Math.random() * 1200
-        ) + 600;
-
-    processed += batch;
-
-
-    if (processed >= TOTAL) {
-
-        processed = TOTAL;
-
-        updateStats();
-
-        stopScanner();
-
-        addStreamLine(
-            processed,
-            "DONE"
-        );
-
-        return;
-
-    }
-
-
-    /*
-        Add several scrolling rows
-        per update to create the
-        terminal effect.
-    */
-
-    const rows =
-        Math.floor(
-            Math.random() * 4
-        ) + 3;
-
-
-    for (
-        let i = 0;
-        i < rows;
-        i++
-    ) {
-
-        const demo =
-            Math.random() < 0.015;
-
-        if (demo) {
-
-            demoEvents++;
-
-            eventsEl.textContent =
-                demoEvents;
-
-            addStreamLine(
-                processed - i,
-                "DEMO"
-            );
-
-        } else {
-
-            addStreamLine(
-                processed - i,
-                "CHECK"
-            );
-
-        }
-
-    }
-
-
-    updateStats();
-
-}
-
-
-/* =========================================================
-   START
-   ========================================================= */
+   START SCANNER
+========================================================= */
 
 function startScanner() {
 
-    if (running)
+    if (running) {
+
+        stopScanner();
+
         return;
+
+    }
 
 
     running = true;
 
-    startedAt =
-        Date.now();
+
+    startBtn.textContent =
+        "STOP SCANNER";
 
 
-    startButton.textContent =
-        "SCANNER RUNNING";
-
-    startButton.classList.add(
-        "running"
+    startBtn.classList.add(
+        "stop"
     );
 
 
-    scanState.textContent =
-        "RUNNING";
-
-    headerStatus.textContent =
+    statusText.textContent =
         "SCANNING";
 
 
-    setWorkers(
-        "ACTIVE"
+    statusDot.style.background =
+        "var(--green)";
+
+
+    stream.innerHTML = "";
+
+
+    addLine("info");
+
+
+    /*
+       Start continuous scrolling.
+    */
+
+    cancelAnimationFrame(
+        scrollAnimation
+    );
+
+    requestAnimationFrame(
+        autoScrollScanner
     );
 
 
-    addStreamLine(
-        processed,
-        "START"
-    );
-
+    /*
+       FAST SCANNER LOOP
+    */
 
     timer =
-        setInterval(
-            scanStep,
-            130
-        );
+        setInterval(() => {
+
+
+            /*
+               High demo processing speed
+            */
+
+            const amount =
+                Math.floor(
+                    900 +
+                    Math.random() *
+                    2600
+                );
+
+
+            processed +=
+                amount;
+
+
+            /*
+               Progress
+            */
+
+            progress +=
+                Math.random() *
+                0.09;
+
+
+            if (progress > 100) {
+                progress = 0;
+            }
+
+
+            /*
+               Simulated results
+
+               FOUND is intentionally
+               occasional.
+            */
+
+            const roll =
+                Math.random();
+
+
+            if (roll < 0.035) {
+
+                events++;
+
+                addLine("found");
+
+            }
+
+            else if (roll < 0.075) {
+
+                events++;
+
+                addLine("info");
+
+            }
+
+            else {
+
+                addLine("check");
+
+            }
+
+
+            updateUI();
+
+
+            rateEl.textContent =
+                amount.toLocaleString() +
+                "/s";
+
+
+        }, 90);
 
 }
 
 
 /* =========================================================
-   STOP
-   ========================================================= */
+   STOP SCANNER
+========================================================= */
 
 function stopScanner() {
 
     running = false;
 
+
     clearInterval(timer);
+
 
     timer = null;
 
 
-    startButton.textContent =
+    cancelAnimationFrame(
+        scrollAnimation
+    );
+
+
+    startBtn.textContent =
         "START SCANNER";
 
-    startButton.classList.remove(
-        "running"
+
+    startBtn.classList.remove(
+        "stop"
     );
 
 
-    scanState.textContent =
+    statusText.textContent =
         "STOPPED";
 
-    headerStatus.textContent =
-        "READY";
+
+    statusDot.style.background =
+        "var(--red)";
 
 
-    setWorkers(
-        "READY"
-    );
+    addLine("warn");
 
 }
 
 
 /* =========================================================
-   BUTTON
-   ========================================================= */
+   START BUTTON
+========================================================= */
 
-startButton.addEventListener(
+startBtn.addEventListener(
     "click",
-    () => {
-
-        if (running) {
-
-            stopScanner();
-
-        } else {
-
-            startScanner();
-
-        }
-
-    }
+    startScanner
 );
 
 
 /* =========================================================
    MODE BUTTONS
-   ========================================================= */
+========================================================= */
 
 document
-    .querySelectorAll(".mode button")
+    .querySelectorAll(".mode")
     .forEach(button => {
 
         button.addEventListener(
@@ -1438,16 +1845,15 @@ document
             () => {
 
                 document
-                    .querySelectorAll(
-                        ".mode button"
-                    )
-                    .forEach(b => {
+                    .querySelectorAll(".mode")
+                    .forEach(btn => {
 
-                        b.classList.remove(
+                        btn.classList.remove(
                             "active"
                         );
 
                     });
+
 
                 button.classList.add(
                     "active"
@@ -1460,75 +1866,27 @@ document
 
 
 /* =========================================================
-   CLOCK
-   ========================================================= */
-
-setInterval(
-    () => {
-
-        const now =
-            new Date();
-
-        clock.textContent =
-            now.toLocaleTimeString(
-                [],
-                {
-                    hour12: false
-                }
-            );
-
-    },
-    1000
-);
-
-
-/* =========================================================
    INITIAL TERMINAL CONTENT
-   ========================================================= */
+========================================================= */
 
-const initialMessages = [
-    "Terminal initialized.",
-    "Configuration loaded.",
-    "Scanner engine ready.",
-    "Waiting for start command..."
-];
+for (
+    let i = 0;
+    i < 18;
+    i++
+) {
+
+    processed++;
+
+    addLine("check");
+
+}
 
 
-initialMessages.forEach(
-    (message, index) => {
+/* Reset actual counter */
 
-        const line =
-            document.createElement(
-                "div"
-            );
+processed = 0;
 
-        line.className =
-            "stream-line";
-
-        line.innerHTML = `
-
-            <span class="stream-time">
-                ${currentTime()}
-            </span>
-
-            <span class="stream-index">
-                SYS
-            </span>
-
-            <span class="stream-id">
-                ${message}
-            </span>
-
-            <span class="stream-result">
-                READY
-            </span>
-
-        `;
-
-        stream.appendChild(line);
-
-    }
-);
+updateUI();
 
 </script>
 
